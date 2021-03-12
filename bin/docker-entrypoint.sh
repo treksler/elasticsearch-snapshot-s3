@@ -6,8 +6,13 @@ set -e
 if [ -f "${ES_USER_FILE}" ] ; then
   export ES_USER="$(cat ${ES_USER_FILE})"
 fi
+
 if [ -f "${ES_PASSWORD_FILE}" ] ; then
   export ES_PASSWORD="$(cat ${ES_PASSWORD_FILE})"
+fi
+
+if [ -f "${ES_REPO_FILE}" ] ; then
+  export ES_REPO="$(cat ${ES_REPO_FILE})"
 fi
 
 # run snapshot.sh, if no command was passed

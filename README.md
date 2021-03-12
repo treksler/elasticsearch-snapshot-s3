@@ -6,7 +6,7 @@ Backup Elasticsearch to S3 (supports periodic backups)
 
 Docker:
 ```sh
-$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e S3_PATH=backup -e ES_REPOSITORY=dbname -e ES_USER=user -e ES_PASSWORD=password -e ES_HOST=localhost treksler/elasticsearch-snapshot-s3
+$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e ES_REPO=dbname -e ES_USER=user -e ES_PASSWORD=password -e ES_HOST=localhost treksler/elasticsearch-snapshot-s3
 ```
 
 Docker Compose:
@@ -15,12 +15,14 @@ elasticsearch-snapshot-s3:
   image: treksler/elasticsearch-snapshot-s3
   environment:
     SCHEDULE: '@daily'
-    S3_REGION: region
+    S3_REGION: ca-central-1
     S3_ACCESS_KEY_ID: key
     S3_SECRET_ACCESS_KEY: secret
     S3_BUCKET: my-bucket
-    S3_PATH: backup
-    ES_REPOSITORY: dbname
+    S3_IAM_ROLE: arn:aws:iam::013456789:role/BackupsESSnapshotRole
+    ES_SCHEME: https
+    ES_host: elasticsearch
+    ES_REPO: dbname
     ES_USER: user
     ES_PASSWORD: password
 ```
@@ -63,3 +65,10 @@ OR
 "ES_JAVA_OPTS=-Xms${ES_HEAP_SIZE:-1g} -Xmx${ES_HEAP_SIZE:-1g} -Des.allow_insecure_settings=true"
 ```
 
+### AWS Hosted Elasticsearch
+
+When using AWS hosted elasticsearch, set up the user and the snapshot role as described here:
+
+https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-managedomains-snapshots.html
+
+then pass the ES_ROLE variable
