@@ -23,11 +23,19 @@ if [ -n "${S3_ENDPOINT}" ]; then
   AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
 fi
 
-# construct ES_URL
-if [ "${ES_USER}" != "" ] ; then
-  ES_URL="${ES_SCHEME:-https}://${ES_USER}:${ES_PASSWORD}@${ES_HOST}:${ES_PORT:-9200}"
-else
-  ES_URL="${ES_SCHEME:-http}://${ES_HOST}:${ES_PORT:-9200}"
+# signed AWS ES requests do not work with a port          
+if [ -n "${S3_IAM_ROLE}" ] ; then         
+  unset ES_PORT                                                      
+fi                                                                   
+                                                                     
+# construct ES_URL                                                   
+if [ -n "${ES_USER}" ] ; then                                        
+  ES_URL="${ES_SCHEME:-https}://${ES_USER}:${ES_PASSWORD}@${ES_HOST}"
+else                                                                 
+  ES_URL="${ES_SCHEME:-http}://${ES_HOST}"                           
+fi                                                                   
+if [ -n "${ES_PORT}" ] ; then                     
+  ES_URL="${ES_URL}:${ES_PORT}"                   
 fi
 
 ## -------------- setup repository ---------------
