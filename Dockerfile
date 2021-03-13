@@ -1,7 +1,7 @@
 FROM  alpine:3.10
 LABEL maintainer="Risto Treksler <risto78@gmail.com>"
 ENV   ES_HOST='elasticsearch' \
-      ES_PORT='9200' \
+      ES_PORT='' \
       ES_SCHEME='https' \
       ES_REPO='elasticsearch' \
       ES_REPO_FILE='' \
