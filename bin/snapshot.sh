@@ -115,7 +115,7 @@ else
   }'
 fi
 
-case "${ACTION:-create}" in
+case "${ES_SNAPSHOT_ACTION:-create}" in
   create)
     ## -------------- perform snapshot ---------------
     curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
