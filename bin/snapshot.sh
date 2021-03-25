@@ -3,6 +3,37 @@
 set -e
 set -o pipefail
 
+# date function is very limited in busybox
+function duration2seconds () {
+  COUNT=${1//[[:alpha:]]*}
+  UNIT=${1##*[[:digit:]]}
+  case "${UNIT}" in
+    S)
+      echo ${COUNT}
+      ;;
+    M)
+      echo $((COUNT*60))
+      ;;
+    H)
+      echo $((COUNT*60*60))
+      ;;
+    d)
+      echo $((COUNT*60*60*24))
+      ;;
+    w)
+      echo $((COUNT*60*60*24*7))
+      ;;
+    m)
+      echo $((COUNT*60*60*24*30))
+      ;;
+    y)
+      echo $((COUNT*60*60*24*30*365))
+      ;;
+    *)
+      echo ${COUNT}
+      ;;
+    esac
+}
 
 if [ -z "${S3_BUCKET}" ]; then
   echo "You need to set the S3_BUCKET environment variable."
@@ -89,38 +120,6 @@ fi
 curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
 
 ## -------------- remove old snapshots ---------------
-
-# date function is very limited in busybox
-function duration2seconds () {
-  COUNT=${1//[[:alpha:]]*}
-  UNIT=${1##*[[:digit:]]}
-  case "${UNIT}" in
-    S)
-      echo ${COUNT}
-      ;;
-    M)
-      echo $((COUNT*60))
-      ;;
-    H)
-      echo $((COUNT*60*60))
-      ;;
-    d)
-      echo $((COUNT*60*60*24))
-      ;;
-    w)
-      echo $((COUNT*60*60*24*7))
-      ;;
-    m)
-      echo $((COUNT*60*60*24*30))
-      ;;
-    y)
-      echo $((COUNT*60*60*24*30*365))
-      ;;
-    *)
-      echo ${COUNT}
-      ;;
-    esac
-}
 
 # refuse to prune old backups if MAX_AGE is not set
 if [ -z "${MAX_AGE}" ] ; then
