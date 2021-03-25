@@ -32,7 +32,7 @@ function duration2seconds () {
     *)
       echo ${COUNT}
       ;;
-    esac
+  esac
 }
 
 if [ -z "${S3_BUCKET}" ]; then
@@ -115,27 +115,44 @@ else
   }'
 fi
 
-## -------------- perform snapshot ---------------
-
-curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
-
-## -------------- remove old snapshots ---------------
-
-# refuse to prune old backups if MAX_AGE is not set
-if [ -z "${MAX_AGE}" ] ; then
-  "You need to set the MAX_AGE environment variable."
-  exit 2
-fi
-
-# prune old snapshots
-MAX_AGE=$(duration2seconds ${MAX_AGE})
-now=$(date +%s);
-older_than=$((now-MAX_AGE))
-curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/_all?pretty" | jq -r '.[][] | "\(.start_time) \(.snapshot)" | sub("T"; " ") | sub ("\\..*Z"; "")' | while read date time name ; do
-  created=$(date -d "${date} ${time}" +%s);
-  if [[ ${created} -lt ${older_than} ]] ; then
-    if [ -n "${name}" ] ; then
-      curl -s -k -XDELETE "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${name}?pretty"
+case "${ACTION:-snapshot}" in
+  snapshot)
+    ## -------------- perform snapshot ---------------
+    curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
+    ## -------------- remove old snapshots ---------------
+    # refuse to prune old backups if MAX_AGE is not set
+    if [ -z "${MAX_AGE}" ] ; then
+      echo "You need to set the MAX_AGE environment variable." >&2
+      exit 2
     fi
-  fi
-done
+    # prune old snapshots
+    MAX_AGE=$(duration2seconds ${MAX_AGE})
+    now=$(date +%s);
+    older_than=$((now-MAX_AGE))
+    curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/_all?pretty" | jq -r '.[][] | "\(.start_time) \(.snapshot)" | sub("T"; " ") | sub ("\\..*Z"; "")' | while read date time name ; do
+      created=$(date -d "${date} ${time}" +%s);
+      if [[ ${created} -lt ${older_than} ]] ; then
+        if [ -n "${name}" ] ; then
+          curl -s -k -XDELETE "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${name}?pretty"
+        fi
+      fi
+    done
+    ;;
+  list)
+    ## -------------- list snapshots ---------------
+    curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/_all?pretty"
+    ;;
+  restore)
+    # refuse to restore if ES_SNAPSHOT is not set
+    if [ -z "${ES_SNAPSHOT}" ] ; then
+      echo "You need to set the ES_SNAPSHOT environment variable." >&2
+      exit 3
+    fi
+    curl -k -XPOST "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/{ES_SNAPSHOT}/_restore?pretty" -H 'Content-Type: application/json' -d'
+    {
+      "indices": "'${ES_RESTORE_INDICES}'",
+      "ignore_unavailable": '${ES_IGNORE_UNAVAILABLE:-true}',
+      "include_global_state": '${ES_RESTORE_GLOBAL_STATE:-false}'
+    }'
+    ;;
+esac
