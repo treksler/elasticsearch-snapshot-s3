@@ -115,8 +115,8 @@ else
   }'
 fi
 
-case "${ACTION:-snapshot}" in
-  snapshot)
+case "${ACTION:-create}" in
+  create)
     ## -------------- perform snapshot ---------------
     curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
     ## -------------- remove old snapshots ---------------
