@@ -2,7 +2,7 @@
 
 Backup Elasticsearch to S3 (supports periodic backups)
 
-## Usage
+## Create Snapshot
 
 Docker:
 ```sh
@@ -14,6 +14,7 @@ Docker Compose:
 elasticsearch-snapshot-s3:
   image: treksler/elasticsearch-snapshot-s3
   environment:
+    ES_SNAPSHOT_ACTION: 'create'
     SCHEDULE: '@daily'
     S3_REGION: ca-central-1
     S3_ACCESS_KEY_ID: key
@@ -25,6 +26,32 @@ elasticsearch-snapshot-s3:
     ES_REPO: dbname
     ES_USER: user
     ES_PASSWORD: password
+```
+
+### List Snapshot(s)
+```
+    ES_SNAPSHOT_ACTION: 'list'
+    ES_SNAPSHOT: '_all' # or specify the name of a snapshot to get info about it
+```
+
+### List Snapshot Indices
+```
+    ES_SNAPSHOT_ACTION: 'list-indices'
+    ES_SNAPSHOT: '<snapshot name>' # required
+```
+
+### Restore Snapshot Indices
+```
+    ES_SNAPSHOT_ACTION: 'restore'
+    ES_SNAPSHOT: '<snapshot name>' # name of snapshot to restore (required)
+    ES_IGNORE_UNAVAILABLE: true
+    ES_RESTORE_INDICES: '' # will restore all but kibana by default, if this is empty
+    ES_RESTORE_GLOBAL_STATE: true # if true this will restore templates, etc.
+    ES_RESTORE_ALIASES: false
+    ES_RESTORE_OVERWRITE_ALL_INDICES: false # if true, this will DELETE existing indices first, prior to resotring
+    ES_RESTORE_OVERWRITE_INDICES: '' # if not empty, this will DELETE this list of existing indices first, prior to resotring
+    ES_RESTORE_RENAME_PATTERN='(.+)'
+    ES_RESTORE_RENAME_REPLACEMENT=restored_\$1   
 ```
 
 ### Automatic Periodic Backups
