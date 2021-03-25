@@ -148,7 +148,7 @@ case "${ES_SNAPSHOT_ACTION:-create}" in
       echo "You need to set the ES_SNAPSHOT environment variable." >&2
       exit 3
     fi
-    curl -k -XPOST "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/{ES_SNAPSHOT}/_restore?pretty" -H 'Content-Type: application/json' -d'
+    curl -k -XPOST "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT}/_restore?pretty" -H 'Content-Type: application/json' -d'
     {
       "indices": "'${ES_RESTORE_INDICES}'",
       "ignore_unavailable": '${ES_IGNORE_UNAVAILABLE:-true}',
