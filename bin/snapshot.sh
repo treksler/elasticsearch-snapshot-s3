@@ -117,7 +117,7 @@ fi
 
 case "${ES_SNAPSHOT_ACTION:-create}" in
   create)
-    ## -------------- perform snapshot ---------------
+    ## -------------- create snapshot ---------------
     curl -s -k -XPUT "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_REPO}_$(date +%Y-%m-%d_%H-%M-%S)?pretty&wait_for_completion=true"
     ## -------------- remove old snapshots ---------------
     # refuse to prune old backups if MAX_AGE is not set
@@ -140,19 +140,52 @@ case "${ES_SNAPSHOT_ACTION:-create}" in
     ;;
   list)
     ## -------------- list snapshots ---------------
-    curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/_all?pretty"
+    curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT:-_all}?pretty"
     ;;
-  restore)
+  list-indices)
+    ## -------------- list snapshot indices ---------------
     # refuse to restore if ES_SNAPSHOT is not set
     if [ -z "${ES_SNAPSHOT}" ] ; then
       echo "You need to set the ES_SNAPSHOT environment variable." >&2
       exit 3
     fi
-    curl -k -XPOST "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT}/_restore?pretty" -H 'Content-Type: application/json' -d'
+    curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT}/" | jq -r .snapshots[0].indices[] | tr '\n' ','
+    ;;
+  restore)
+    ## -------------- restore snapshot ---------------
+    # refuse to restore if ES_SNAPSHOT is not set
+    if [ -z "${ES_SNAPSHOT}" ] ; then
+      echo "You need to set the ES_SNAPSHOT environment variable." >&2
+      exit 3
+    fi
+    # by default, restore all indices except kibana
+    ES_RESTORE_INDICES="${ES_RESTORE_INDICES:-$(curl -s -k -XGET "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT}/" | jq -r .snapshots[0].indices[] | grep -v kibana | tr '\n' ',')}"
+    # refuse to restore if ES_RESTORE_INDICES is blank
+    if [ -z "${ES_RESTORE_INDICES}" ] ; then
+      echo "You need to set the ES_RESTORE_INDICES environment variable." >&2
+      exit 4
+    fi
+    # overwrite existing indices if desired
+    if [ "${ES_RESTORE_OVERWRITE_ALL_INDICES}" == "true" ] || [ "${ES_RESTORE_OVERWRITE_ALL_INDICES}" == "1" ] ; then
+      for index in ${ES_RESTORE_INDICES//,/ } ; do
+        # check if index exists and delete it
+        [ "$(curl -qs -XGET "${ES_URL}/${index}" | jq .error)" == "null" ] && curl -s -k -XDELETE "${ES_URL}/${index}"
+      done
+    elif [ -n "${ES_RESTORE_OVERWRITE_INDICES}" ] ; then
+      for index in ${ES_RESTORE_OVERWRITE_INDICES//,/ } ; do
+        # check if index exists and delete it
+        [ "$(curl -qs -XGET "${ES_URL}/${index}" | jq .error)" == "null" ] && curl -s -k -XDELETE "${ES_URL}/${index}"
+      done
+    fi
+    # restore snapshot
+    curl -s -k -XPOST "${ES_URL}/_snapshot/${ES_REPO}-s3-repository/${ES_SNAPSHOT}/_restore?pretty" -H 'Content-Type: application/json' -d'
     {
       "indices": "'${ES_RESTORE_INDICES}'",
       "ignore_unavailable": '${ES_IGNORE_UNAVAILABLE:-true}',
-      "include_global_state": '${ES_RESTORE_GLOBAL_STATE:-false}'
+      "include_global_state": '${ES_RESTORE_GLOBAL_STATE:-false}',
+      "rename_pattern": "'${ES_RESTORE_RENAME_PATTERN}'",
+      "rename_replacement": "'${ES_RESTORE_RENAME_REPLACEMENT}'",
+      "include_aliases": '${ES_RESTORE_ALIASES:-false}'
     }'
     ;;
 esac
