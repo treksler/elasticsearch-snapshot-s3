@@ -22,7 +22,7 @@ elasticsearch-snapshot-s3:
     S3_BUCKET: my-bucket
     S3_IAM_ROLE: arn:aws:iam::013456789:role/BackupsESSnapshotRole
     ES_SCHEME: https
-    ES_host: elasticsearch
+    ES_HOST: elasticsearch
     ES_REPO: dbname
     ES_USER: user
     ES_PASSWORD: password
