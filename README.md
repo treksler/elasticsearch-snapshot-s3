@@ -98,4 +98,4 @@ When using AWS hosted elasticsearch, set up the user and the snapshot role as de
 
 https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-managedomains-snapshots.html
 
-then pass the ES_ROLE variable
+then pass the S3_IAM_ROLE variable
